@@ -3,59 +3,65 @@ import { motion } from "framer-motion";
 import { useState, useRef } from "react";
 
 export default function App() {
-  const [id, setId] = useState<null | string>();
+  const [boxId, setBoxId] = useState<null | string>();
 
-  const [switched, setSwitched] = useState(false);
-  const toggleBtn = () => setSwitched((prev) => !prev);
+  const [circleSwitched, setCircleSwitched] = useState(false);
+  const switchCircle = () => setCircleSwitched((prev) => !prev);
 
   const boxRef = useRef<HTMLDivElement>(null);
   const getBoxWidth = () => {
-    if (!boxRef) return;
-
-    return boxRef.current?.offsetWidth;
+    if (boxRef.current) {
+      return boxRef.current.offsetWidth;
+    }
   };
 
   return (
     <Wrapper>
-      <Grid>
+      <BoxGrid>
         <Box
-          onClick={() => setId("first")}
+          onClick={() => setBoxId("first")}
           layoutId={"first"}
-          whileHover={{ scale: 1.1 }}
+          whileHover={{
+            scale: 1.1,
+            transition: { duration: 0.3 },
+          }}
           ref={boxRef}
         >
           Hover me! <br /> Click me!
         </Box>
-        <Box>{switched ? null : <Circle layoutId="switch" />}</Box>
-        <Box>{switched ? <Circle layoutId="switch" /> : null}</Box>
+        <Box>{!circleSwitched && <Circle layoutId="switch" />}</Box>
+        <Box>{circleSwitched && <Circle layoutId="switch" />}</Box>
         <Box
-          onClick={() => setId("last")}
+          onClick={() => setBoxId("last")}
           layoutId={"last"}
-          whileHover={{ scale: 1.1 }}
+          whileHover={{
+            scale: 1.1,
+            transition: { duration: 0.3 },
+          }}
         >
           Hover me! <br /> Click me!
         </Box>
-      </Grid>
+      </BoxGrid>
 
-      {id ? (
+      {boxId && (
         <Overlay
-          onClick={() => setId(null)}
+          onClick={() => setBoxId(null)}
           initial={{ backgroundColor: "rgba(0,0,0,0)" }}
           animate={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           exit={{ backgroundColor: "rgba(0,0,0,0)" }}
         >
-          <Modal layoutId={id} width={getBoxWidth()!}>
+          <Modal layoutId={boxId} $boxWidth={getBoxWidth()!}>
             Thank you 🥰
           </Modal>
         </Overlay>
-      ) : null}
+      )}
 
       <Button
         whileHover={{
           scale: 1.1,
           transition: { duration: 0.3 },
         }}
-        onClick={toggleBtn}
+        onClick={switchCircle}
       >
         공 옮기기
       </Button>
@@ -71,7 +77,7 @@ const Wrapper = styled.div`
   align-items: center;
 `;
 
-const Grid = styled.div`
+const BoxGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(100px, 400px));
   gap: 20px;
@@ -97,19 +103,33 @@ const Box = styled(motion.div)`
 
   &:first-child {
     transform-origin: bottom right !important;
-    // whileHover에 originX: "400px", originY: "250px" -> 클릭하고 난 뒤에 origin값이 초기화됨
-    // !important 키워드를 사용하지 않으면 Modal 띄운 후 transform-origin이 기본값으로 초기화됨
   }
 
   &:last-child {
     transform-origin: top left !important;
-    // whileHover에 originX: 0, originY: 0 지정하면 클릭하고 난 뒤에 origin값이 초기화됨
-    // !important 키워드를 사용하지 않으면 Modal 띄운 후 transform-origin이 기본값으로 초기화됨
   }
+
+  // transform-origin 관련
+  // 1. 값을 px 단위로 지정하면 모달 크기를 반응형으로 만들 수 없으므로 string으로 지정해야함
+  // 2. whileHover에 직접 originX, originY를 지정하면 'bottom', 'right'는 animatble value가 아니므로 style 속성을 통해 값을 지정하라는 경고가 뜨고,
+  // 모달이 닫힐 때 애니메이션 효과가 적용되지 않음
+  // 3. inline style로 originX, originY를 지정하면 모달이 닫힐 때 애니메이션 효과가 적용되지 않음
+  // 4. !important 키워드를 사용해야 모달을 띄운 후 transform-origin이 기본값으로 초기화되지 않고 애니메이션이 적용됨
 `;
 
-const Modal = styled(motion.div)<{ width: number }>`
-  width: ${({ width }) => width + "px"};
+const Overlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const Modal = styled(motion.div)<{ $boxWidth: number }>`
+  width: ${({ $boxWidth }) => $boxWidth + "px"};
   height: 250px;
   display: flex;
   justify-content: center;
@@ -134,15 +154,4 @@ const Button = styled(motion.button)`
   font-weight: bold;
   font-size: 20px;
   cursor: pointer;
-`;
-
-const Overlay = styled(motion.div)`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 `;
