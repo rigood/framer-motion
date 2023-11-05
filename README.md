@@ -82,3 +82,52 @@ const switchCircle = () => setCircleSwitched((prev) => !prev);
 ```
 
 </br>
+
+## 4. 스크롤 애니메이션
+
+- framer-motion의 `useAnimation` 훅과 react-intersection-observer의 `useInView` 훅을 사용하여 스크롤 시 `FadeIn` 되는 애니메이션 구현하였습니다.
+
+<img src="public/assets/readme/scrollAnimation.gif" />
+
+```ts
+// 커스텀 훅
+const useScrollAnimation = () => {
+  const animation = useAnimation();
+  const { ref, inView } = useInView();
+
+  useEffect(() => {
+    if (inView) {
+      // 엘리먼트가 뷰포트 내에 들어오면 visible 애니메이션 실행
+      animation.start("visible");
+    } else {
+      // 엘리먼트가 뷰포트에서 벗어나면 hidden 애니메이션 실행
+      animation.start("hidden");
+    }
+  }, [animation, inView]);
+
+  return { ref, animation };
+};
+
+// 커스텀 훅이 적용된 Wrapper 컴포넌트
+const ScrollWrapper = ({ children }: ScrollWrapperProps) => {
+  const { ref, animation } = useScrollAnimation();
+
+  return (
+    <motion.div
+      ref={ref}
+      variants={fadeInVariants}
+      initial="hidden"
+      animate={animation}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+// 애니메이션 적용
+<ScrollWrapper>
+  <ExampleComponent />
+</ScrollWrapper>;
+```
+
+<br>
